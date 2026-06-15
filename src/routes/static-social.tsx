@@ -96,18 +96,18 @@ function StaticPage() {
         <div className="space-y-6">
           <div>
             <Label>Asset Type</Label>
-            <PillTabs options={ASSET_TYPES} value={assetType} onChange={setAssetType} />
+            <PillTabs options={ASSET_TYPES} value={selectedAssetType} onChange={setSelectedAssetType} />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label>Platform</Label>
-              <Field as="select" value={platform} onChange={(e) => setPlatform(e.target.value as typeof platform)}>
+              <Field as="select" value={selectedPlatform} onChange={(e) => setSelectedPlatform(e.target.value as typeof selectedPlatform)}>
                 {PLATFORMS.map((p) => <option key={p} value={p}>{p}</option>)}
               </Field>
             </div>
             <div>
               <Label>Persona</Label>
-              <Field as="select" value={persona} onChange={(e) => setPersona(e.target.value)}>
+              <Field as="select" value={selectedPersona} onChange={(e) => setSelectedPersona(e.target.value)}>
                 {PERSONAS.map((p) => <option key={p} value={p}>{p}</option>)}
               </Field>
             </div>
