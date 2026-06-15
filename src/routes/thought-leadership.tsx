@@ -19,7 +19,7 @@ function TLPage() {
   const [tone, setTone] = useState<(typeof TONES)[number]>("Authoritative");
   const [suggesting, setSuggesting] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [blog, setBlog] = useState("");
   const [linkedin, setLinkedin] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -41,22 +41,34 @@ function TLPage() {
 
   const onGenerate = async () => {
     if (!topic.trim()) return;
-    setLoading(true);
+    setIsLoading(true);
     setError(null);
     setBlog("");
     setLinkedin("");
     try {
-      const res = await generateContent({ mode: "thought-leadership", topic, tone });
-      const [b, li] = res.body.split(/---LINKEDIN---/i);
-      setBlog((b ?? res.body).trim());
-      setLinkedin((li ?? "").trim());
+      const result = await generateContent({
+        mode: "thought-leadership",
+        topic,
+        tone,
+        suggestTopics: false,
+      });
+      const linkedinMarker = "─────────────────────────────\nLINKEDIN POST";
+      const idx = result.indexOf(linkedinMarker);
+      if (idx !== -1) {
+        setBlog(result.substring(0, idx).trim());
+        setLinkedin(result.substring(idx + linkedinMarker.length).trim());
+      } else {
+        const [b, li] = result.split(/LINKEDIN POST/i);
+        setBlog((b ?? result).trim());
+        setLinkedin((li ?? "").trim());
+      }
       void save({
-        data: { mode: "thought-leadership", brief: `${topic} | ${tone}`, output: res.body },
+        data: { mode: "thought-leadership", brief: `${topic} | ${tone}`, output: result },
       }).catch(() => {});
     } catch (e) {
       setError(e instanceof Error ? e.message : "Generation failed");
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -96,8 +108,8 @@ function TLPage() {
             <PillTabs options={TONES} value={tone} onChange={setTone} />
           </div>
           <div>
-            <Button onClick={onGenerate} disabled={loading || !topic.trim()}>
-              {loading ? (<span className="inline-flex items-center gap-2"><Spinner />Generating…</span>) : "Generate"}
+            <Button onClick={onGenerate} disabled={isLoading || !topic.trim()}>
+              {isLoading ? (<span className="inline-flex items-center gap-2"><Spinner />Generating…</span>) : "Generate"}
             </Button>
           </div>
         </div>
