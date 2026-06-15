@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ThoughtLeadershipRouteImport } from './routes/thought-leadership'
 import { Route as StaticSocialRouteImport } from './routes/static-social'
+import { Route as HistoryRouteImport } from './routes/history'
 import { Route as CreativeRouteImport } from './routes/creative'
 import { Route as IndexRouteImport } from './routes/index'
 
@@ -22,6 +23,11 @@ const ThoughtLeadershipRoute = ThoughtLeadershipRouteImport.update({
 const StaticSocialRoute = StaticSocialRouteImport.update({
   id: '/static-social',
   path: '/static-social',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HistoryRoute = HistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CreativeRoute = CreativeRouteImport.update({
@@ -38,12 +44,14 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/creative': typeof CreativeRoute
+  '/history': typeof HistoryRoute
   '/static-social': typeof StaticSocialRoute
   '/thought-leadership': typeof ThoughtLeadershipRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/creative': typeof CreativeRoute
+  '/history': typeof HistoryRoute
   '/static-social': typeof StaticSocialRoute
   '/thought-leadership': typeof ThoughtLeadershipRoute
 }
@@ -51,20 +59,22 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/creative': typeof CreativeRoute
+  '/history': typeof HistoryRoute
   '/static-social': typeof StaticSocialRoute
   '/thought-leadership': typeof ThoughtLeadershipRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/creative' | '/static-social' | '/thought-leadership'
+  fullPaths: '/' | '/creative' | '/history' | '/static-social' | '/thought-leadership'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/creative' | '/static-social' | '/thought-leadership'
-  id: '__root__' | '/' | '/creative' | '/static-social' | '/thought-leadership'
+  to: '/' | '/creative' | '/history' | '/static-social' | '/thought-leadership'
+  id: '__root__' | '/' | '/creative' | '/history' | '/static-social' | '/thought-leadership'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CreativeRoute: typeof CreativeRoute
+  HistoryRoute: typeof HistoryRoute
   StaticSocialRoute: typeof StaticSocialRoute
   ThoughtLeadershipRoute: typeof ThoughtLeadershipRoute
 }
@@ -83,6 +93,13 @@ declare module '@tanstack/react-router' {
       path: '/static-social'
       fullPath: '/static-social'
       preLoaderRoute: typeof StaticSocialRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/history': {
+      id: '/history'
+      path: '/history'
+      fullPath: '/history'
+      preLoaderRoute: typeof HistoryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/creative': {
@@ -105,6 +122,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CreativeRoute: CreativeRoute,
+  HistoryRoute: HistoryRoute,
   StaticSocialRoute: StaticSocialRoute,
   ThoughtLeadershipRoute: ThoughtLeadershipRoute,
 }
