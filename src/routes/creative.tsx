@@ -1,8 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { ModeShell, Button, Card, Label, Field, CopyButton, PillTabs, Spinner, Markdown } from "@/components/Shell";
-import { runGeneration, saveGeneration } from "@/lib/generate.functions";
+import {
+  ModeShell, Button, Card, Label, Field, CopyButton,
+  Spinner, Markdown, Stepper, ImageCard,
+} from "@/components/Shell";
+import { runGeneration, saveGeneration, generateImage } from "@/lib/generate.functions";
 
 export const Route = createFileRoute("/creative")({
   head: () => ({ meta: [{ title: "Creative — Corpay Content Engine" }] }),
@@ -10,8 +13,11 @@ export const Route = createFileRoute("/creative")({
 });
 
 const STAGES = ["Idea", "Script", "Moodboard", "Storyboard", "Execution Round", "Final"] as const;
+type Stage = (typeof STAGES)[number];
 const PERSONAS = ["All Personas", "Fleet Guy", "T&E Traveler", "Barb (AP Manager)"] as const;
 const PRODUCTS = ["Multi-Card", "AP Automation", "International Payments", "Brand"] as const;
+
+type StageResult = { stage: Stage; output: string };
 
 function parseIdeaConcepts(text: string): string[] {
   const parts = text.split(/(?=#+\s*Concept\s+\d+)/i);
@@ -19,35 +25,64 @@ function parseIdeaConcepts(text: string): string[] {
   return concepts.length > 1 ? concepts : [text];
 }
 
+function parseMoodboardRefs(text: string): string[] {
+  const parts = text.split(/(?=#+\s*(?:Reference|Visual Reference|\d+\.)\s*)/i).filter(Boolean);
+  return parts.length > 1
+    ? parts.map((p) => p.trim()).filter(Boolean)
+    : text.split(/\n{2,}/).filter((p) => p.trim().length > 30);
+}
+
+function parseStoryboardFrames(text: string): { visual: string; label: string }[] {
+  const parts = text.split(/(?=#+\s*Frame\s*\d+)/i).filter((p) => p.trim());
+  if (parts.length < 2) return [{ visual: text, label: "Scene" }];
+  return parts.map((p) => {
+    const labelMatch = p.match(/#+\s*(Frame\s*\d+)/i);
+    const visualMatch = p.match(/Visual[^:]*:\s*([^\n]+)/i);
+    return {
+      label: labelMatch ? labelMatch[1] : "Frame",
+      visual: visualMatch ? visualMatch[1].trim() : p.split("\n").slice(1, 3).join(" ").trim(),
+    };
+  });
+}
+
 function CreativePage() {
-  const generate = useServerFn(runGeneration);
+  const doGenerate = useServerFn(runGeneration);
   const save = useServerFn(saveGeneration);
-  const [selectedStage, setSelectedStage] = useState<(typeof STAGES)[number]>("Idea");
-  const [brief, setBrief] = useState("");
-  const [selectedPersona, setSelectedPersona] = useState<string>(PERSONAS[0]);
-  const [selectedProduct, setSelectedProduct] = useState<string>(PRODUCTS[0]);
-  const [isLoading, setIsLoading] = useState(false);
+  const doImage = useServerFn(generateImage);
+
+  // Pipeline state
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [completed, setCompleted] = useState<StageResult[]>([]);
+  const [initialBrief, setInitialBrief] = useState("");
+  const [refinement, setRefinement] = useState("");
+  const [persona, setPersona] = useState<string>(PERSONAS[0]);
+  const [product, setProduct] = useState<string>(PRODUCTS[0]);
   const [output, setOutput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const runGenerate = async (opts: {
-    stage: (typeof STAGES)[number];
-    brief: string;
-    persona: string;
-    product: string;
-  }) => {
+  // Image generation state: keyed by a string identifier
+  const [images, setImages] = useState<Record<string, string>>({});
+  const [imageLoading, setImageLoading] = useState<Record<string, boolean>>({});
+
+  const activeStage = STAGES[activeIndex];
+  const prevOutput = completed[activeIndex - 1]?.output ?? "";
+  const brief = activeIndex === 0 ? initialBrief : prevOutput;
+
+  const runStage = async (opts: { stage: Stage; brief: string; refinementNote?: string }) => {
     setIsLoading(true);
     setError(null);
     setOutput("");
     window.scrollTo({ top: 0, behavior: "smooth" });
+    const combinedBrief = opts.refinementNote
+      ? `${opts.brief}\n\nAdditional direction: ${opts.refinementNote}`
+      : opts.brief;
     try {
-      const res = await generate({
-        data: { mode: "creative", ...opts },
+      const res = await doGenerate({
+        data: { mode: "creative", stage: opts.stage, brief: combinedBrief, persona, product },
       });
       setOutput(res.body);
-      void save({
-        data: { mode: "creative", stage: opts.stage, persona: opts.persona, product: opts.product, brief: opts.brief, output: res.body },
-      }).catch(() => {});
+      void save({ data: { mode: "creative", stage: opts.stage, persona, product, brief: combinedBrief, output: res.body } }).catch(() => {});
     } catch (e) {
       setError(e instanceof Error ? e.message : "Generation failed");
     } finally {
@@ -55,57 +90,117 @@ function CreativePage() {
     }
   };
 
-  const onGenerate = () =>
-    runGenerate({ stage: selectedStage, brief, persona: selectedPersona, product: selectedProduct });
-
-  const developConcept = (concept: string) => {
-    const nextStage = "Script" as const;
-    const trimmed = concept.slice(0, 500);
-    setSelectedStage(nextStage);
-    setBrief(trimmed);
-    void runGenerate({ stage: nextStage, brief: trimmed, persona: selectedPersona, product: selectedProduct });
+  const approve = () => {
+    if (!output || activeIndex >= STAGES.length - 1) return;
+    setCompleted((prev) => {
+      const next = [...prev];
+      next[activeIndex] = { stage: activeStage, output };
+      return next;
+    });
+    setOutput("");
+    setRefinement("");
+    setActiveIndex((i) => i + 1);
   };
 
-  const ideaConcepts = selectedStage === "Idea" && output ? parseIdeaConcepts(output) : null;
+  const revert = (toIndex: number) => {
+    setActiveIndex(toIndex);
+    setCompleted((prev) => prev.slice(0, toIndex));
+    setOutput(completed[toIndex]?.output ?? "");
+    setRefinement("");
+    setError(null);
+  };
+
+  const startOver = () => {
+    setActiveIndex(0);
+    setCompleted([]);
+    setOutput("");
+    setInitialBrief("");
+    setRefinement("");
+    setError(null);
+  };
+
+  const genImage = async (key: string, prompt: string, aspectRatio: "landscape_4_3" | "landscape_16_9") => {
+    setImageLoading((prev) => ({ ...prev, [key]: true }));
+    try {
+      const res = await doImage({ data: { prompt, aspectRatio } });
+      setImages((prev) => ({ ...prev, [key]: res.imageUrl }));
+    } catch (e) {
+      console.error("Image gen failed", e);
+    } finally {
+      setImageLoading((prev) => ({ ...prev, [key]: false }));
+    }
+  };
+
+  const ideaConcepts = activeStage === "Idea" && output ? parseIdeaConcepts(output) : null;
+  const moodRefs = activeStage === "Moodboard" && output ? parseMoodboardRefs(output) : null;
+  const storyFrames = activeStage === "Storyboard" && output ? parseStoryboardFrames(output) : null;
 
   return (
     <ModeShell title="🎬 Creative">
+      <Stepper
+        steps={STAGES}
+        activeIndex={activeIndex}
+        onRevert={revert}
+      />
+
+      {/* Form */}
       <Card className="mb-6">
-        <div className="space-y-6">
-          <div>
-            <Label>Stage</Label>
-            <PillTabs options={STAGES} value={selectedStage} onChange={(s) => { setSelectedStage(s); setOutput(""); }} />
-          </div>
-          <div>
-            <Label>Brief</Label>
-            <Field
-              as="textarea"
-              maxLength={500}
-              rows={4}
-              placeholder="Describe the campaign brief..."
-              value={brief}
-              onChange={(e) => setBrief(e.target.value)}
-            />
-            <div className="text-xs text-muted-foreground mt-1">{brief.length} / 500</div>
-          </div>
+        <div className="space-y-5">
+          {activeIndex === 0 ? (
+            <div>
+              <Label>Campaign Brief</Label>
+              <Field
+                as="textarea"
+                maxLength={500}
+                rows={4}
+                placeholder="Describe the campaign brief, objective, or challenge…"
+                value={initialBrief}
+                onChange={(e) => setInitialBrief(e.target.value)}
+              />
+              <div className="text-xs text-muted-foreground mt-1">{initialBrief.length} / 500</div>
+            </div>
+          ) : (
+            <div>
+              <Label>Refinements for {activeStage} <span className="normal-case text-muted-foreground font-normal">(optional — leave blank to build straight from {STAGES[activeIndex - 1]})</span></Label>
+              <Field
+                as="textarea"
+                rows={2}
+                placeholder={`Any specific direction for the ${activeStage} stage…`}
+                value={refinement}
+                onChange={(e) => setRefinement(e.target.value)}
+              />
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label>Persona</Label>
-              <Field as="select" value={selectedPersona} onChange={(e) => setSelectedPersona(e.target.value)}>
-                {PERSONAS.map((p) => <option key={p} value={p}>{p}</option>)}
+              <Field as="select" value={persona} onChange={(e) => setPersona(e.target.value)}>
+                {PERSONAS.map((p) => <option key={p}>{p}</option>)}
               </Field>
             </div>
             <div>
               <Label>Product</Label>
-              <Field as="select" value={selectedProduct} onChange={(e) => setSelectedProduct(e.target.value)}>
-                {PRODUCTS.map((p) => <option key={p} value={p}>{p}</option>)}
+              <Field as="select" value={product} onChange={(e) => setProduct(e.target.value)}>
+                {PRODUCTS.map((p) => <option key={p}>{p}</option>)}
               </Field>
             </div>
           </div>
-          <div>
-            <Button onClick={onGenerate} disabled={isLoading}>
-              {isLoading ? <span className="inline-flex items-center gap-2"><Spinner />Generating…</span> : "Generate"}
+
+          <div className="flex gap-3 items-center flex-wrap">
+            <Button
+              onClick={() => runStage({ stage: activeStage, brief, refinementNote: refinement })}
+              disabled={isLoading || (activeIndex === 0 && !initialBrief.trim())}
+            >
+              {isLoading
+                ? <span className="inline-flex items-center gap-2"><Spinner />Generating…</span>
+                : output ? `Regenerate ${activeStage}` : `Generate ${activeStage}`}
             </Button>
+            {activeIndex > 0 && (
+              <button type="button" onClick={startOver} className="text-xs text-muted-foreground hover:text-foreground">
+                Start over
+              </button>
+            )}
           </div>
         </div>
       </Card>
@@ -116,15 +211,12 @@ function CreativePage() {
         </Card>
       )}
 
-      {/* Idea stage: parse into selectable concept cards */}
-      {ideaConcepts && ideaConcepts.length > 1 ? (
+      {/* Idea: 3 concept cards */}
+      {ideaConcepts && ideaConcepts.length > 1 && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
-              Pick a concept to develop
-            </p>
-            <CopyButton text={output} />
-          </div>
+          <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
+            Pick a concept to develop
+          </p>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {ideaConcepts.map((concept, i) => (
               <Card key={i} className="flex flex-col justify-between gap-4">
@@ -132,24 +224,119 @@ function CreativePage() {
                 <Button
                   variant="outline"
                   className="w-full mt-2"
-                  onClick={() => developConcept(concept)}
+                  onClick={() => {
+                    setCompleted([{ stage: "Idea", output: concept }]);
+                    setOutput("");
+                    setRefinement("");
+                    setActiveIndex(1);
+                  }}
                   disabled={isLoading}
                 >
-                  {isLoading ? <span className="inline-flex items-center gap-2"><Spinner />Generating…</span> : "Develop into Script →"}
+                  Build on this →
                 </Button>
               </Card>
             ))}
           </div>
         </div>
-      ) : output ? (
+      )}
+
+      {/* Moodboard: visual refs with image gen */}
+      {moodRefs && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Moodboard</p>
+            <CopyButton text={output} />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {moodRefs.map((ref, i) => {
+              const key = `mood-${i}`;
+              return (
+                <Card key={i}>
+                  <Markdown content={ref} />
+                  <div className="mt-3">
+                    <Button
+                      variant="outline"
+                      onClick={() => genImage(key, ref.replace(/^#+[^\n]*\n/, "").trim().slice(0, 400), "landscape_4_3")}
+                      disabled={!!imageLoading[key]}
+                    >
+                      {imageLoading[key] ? <span className="inline-flex items-center gap-2"><Spinner />Generating…</span> : "Envision →"}
+                    </Button>
+                    <ImageCard url={images[key]} alt={`Moodboard ref ${i + 1}`} loading={imageLoading[key]} />
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+          <ApproveBar stage={activeStage} onApprove={approve} isLast={activeIndex === STAGES.length - 1} />
+        </div>
+      )}
+
+      {/* Storyboard: frames with image gen */}
+      {storyFrames && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Storyboard</p>
+            <CopyButton text={output} />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {storyFrames.map((frame, i) => {
+              const key = `frame-${i}`;
+              return (
+                <Card key={i}>
+                  <p className="text-xs font-semibold text-primary mb-2">{frame.label}</p>
+                  <Markdown content={output.split(/(?=#+\s*Frame\s*\d+)/i)[i + 1] ?? frame.visual} />
+                  <div className="mt-3">
+                    <Button
+                      variant="outline"
+                      onClick={() => genImage(key, frame.visual.slice(0, 400), "landscape_16_9")}
+                      disabled={!!imageLoading[key]}
+                    >
+                      {imageLoading[key] ? <span className="inline-flex items-center gap-2"><Spinner />Generating…</span> : "Generate Frame →"}
+                    </Button>
+                    <ImageCard url={images[key]} alt={frame.label} loading={imageLoading[key]} />
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+          <ApproveBar stage={activeStage} onApprove={approve} isLast={activeIndex === STAGES.length - 1} />
+        </div>
+      )}
+
+      {/* Default output for Script / Execution Round / Final (and Idea fallback) */}
+      {output && !ideaConcepts?.length && !moodRefs && !storyFrames && (
         <Card>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-medium uppercase tracking-wider text-muted-foreground">Output</h2>
+            <h2 className="text-sm font-medium uppercase tracking-wider text-muted-foreground">{activeStage}</h2>
             <CopyButton text={output} />
           </div>
           <Markdown content={output} />
+          {activeIndex < STAGES.length - 1 && (
+            <div className="mt-6 pt-4 border-t border-border">
+              <ApproveBar stage={activeStage} onApprove={approve} isLast={false} />
+            </div>
+          )}
         </Card>
-      ) : null}
+      )}
+
+      {/* Single-concept Idea fallback also needs approve button */}
+      {ideaConcepts?.length === 1 && output && (
+        <div className="mt-4">
+          <ApproveBar stage={activeStage} onApprove={approve} isLast={false} />
+        </div>
+      )}
     </ModeShell>
+  );
+}
+
+function ApproveBar({ stage, onApprove, isLast }: { stage: Stage; onApprove: () => void; isLast: boolean }) {
+  const next = STAGES[STAGES.indexOf(stage) + 1];
+  if (isLast) return null;
+  return (
+    <div className="flex gap-3 items-center">
+      <Button onClick={onApprove}>
+        Approved — build {next} →
+      </Button>
+    </div>
   );
 }
