@@ -52,9 +52,9 @@ function parseVariations(text: string): Variation[] {
 
 function StaticPage() {
   const save = useServerFn(saveGeneration);
-  const [assetType, setAssetType] = useState<(typeof ASSET_TYPES)[number]>("Social Post");
-  const [platform, setPlatform] = useState<(typeof PLATFORMS)[number]>("LinkedIn");
-  const [persona, setPersona] = useState<string>(PERSONAS[0]);
+  const [selectedAssetType, setSelectedAssetType] = useState<(typeof ASSET_TYPES)[number]>("Social Post");
+  const [selectedPlatform, setSelectedPlatform] = useState<(typeof PLATFORMS)[number]>("LinkedIn");
+  const [selectedPersona, setSelectedPersona] = useState<string>(PERSONAS[0]);
   const [brief, setBrief] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [variations, setVariations] = useState<Variation[]>([]);
