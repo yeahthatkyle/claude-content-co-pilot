@@ -30,9 +30,15 @@ function CreativePage() {
     setError(null);
     setOutput("");
     try {
-      const res = await generateContent({ mode: "creative", stage, persona, product, brief });
+      const res = await generateContent({
+        mode: "creative",
+        stage: selectedStage,
+        brief: brief,
+        persona: selectedPersona,
+        product: selectedProduct,
+      });
       setOutput(res);
-      void save({ data: { mode: "creative", stage, persona, product, brief, output: res } }).catch(() => {});
+      void save({ data: { mode: "creative", stage: selectedStage, persona: selectedPersona, product: selectedProduct, brief, output: res } }).catch(() => {});
     } catch (e) {
       setError(e instanceof Error ? e.message : "Generation failed");
     } finally {
