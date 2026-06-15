@@ -52,9 +52,9 @@ function parseVariations(text: string): Variation[] {
 
 function StaticPage() {
   const save = useServerFn(saveGeneration);
-  const [assetType, setAssetType] = useState<(typeof ASSET_TYPES)[number]>("Social Post");
-  const [platform, setPlatform] = useState<(typeof PLATFORMS)[number]>("LinkedIn");
-  const [persona, setPersona] = useState<string>(PERSONAS[0]);
+  const [selectedAssetType, setSelectedAssetType] = useState<(typeof ASSET_TYPES)[number]>("Social Post");
+  const [selectedPlatform, setSelectedPlatform] = useState<(typeof PLATFORMS)[number]>("LinkedIn");
+  const [selectedPersona, setSelectedPersona] = useState<string>(PERSONAS[0]);
   const [brief, setBrief] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [variations, setVariations] = useState<Variation[]>([]);
@@ -65,14 +65,20 @@ function StaticPage() {
     setError(null);
     setVariations([]);
     try {
-      const res = await generateContent({ mode: "static-social", assetType, platform, persona, brief });
+      const res = await generateContent({
+        mode: "static-social",
+        assetType: selectedAssetType,
+        platform: selectedPlatform,
+        persona: selectedPersona,
+        brief: brief,
+      });
       setVariations(parseVariations(res));
       void save({
         data: {
           mode: "static-social",
-          stage: assetType,
-          persona,
-          product: platform,
+          stage: selectedAssetType,
+          persona: selectedPersona,
+          product: selectedPlatform,
           brief,
           output: res,
         },
@@ -90,18 +96,18 @@ function StaticPage() {
         <div className="space-y-6">
           <div>
             <Label>Asset Type</Label>
-            <PillTabs options={ASSET_TYPES} value={assetType} onChange={setAssetType} />
+            <PillTabs options={ASSET_TYPES} value={selectedAssetType} onChange={setSelectedAssetType} />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label>Platform</Label>
-              <Field as="select" value={platform} onChange={(e) => setPlatform(e.target.value as typeof platform)}>
+              <Field as="select" value={selectedPlatform} onChange={(e) => setSelectedPlatform(e.target.value as typeof selectedPlatform)}>
                 {PLATFORMS.map((p) => <option key={p} value={p}>{p}</option>)}
               </Field>
             </div>
             <div>
               <Label>Persona</Label>
-              <Field as="select" value={persona} onChange={(e) => setPersona(e.target.value)}>
+              <Field as="select" value={selectedPersona} onChange={(e) => setSelectedPersona(e.target.value)}>
                 {PERSONAS.map((p) => <option key={p} value={p}>{p}</option>)}
               </Field>
             </div>

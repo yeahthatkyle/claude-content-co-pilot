@@ -17,10 +17,10 @@ const PRODUCTS = ["Multi-Card", "AP Automation", "International Payments", "Bran
 function CreativePage() {
   
   const save = useServerFn(saveGeneration);
-  const [stage, setStage] = useState<(typeof STAGES)[number]>("Idea");
+  const [selectedStage, setSelectedStage] = useState<(typeof STAGES)[number]>("Idea");
   const [brief, setBrief] = useState("");
-  const [persona, setPersona] = useState<string>(PERSONAS[0]);
-  const [product, setProduct] = useState<string>(PRODUCTS[0]);
+  const [selectedPersona, setSelectedPersona] = useState<string>(PERSONAS[0]);
+  const [selectedProduct, setSelectedProduct] = useState<string>(PRODUCTS[0]);
   const [isLoading, setIsLoading] = useState(false);
   const [output, setOutput] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -30,9 +30,15 @@ function CreativePage() {
     setError(null);
     setOutput("");
     try {
-      const res = await generateContent({ mode: "creative", stage, persona, product, brief });
+      const res = await generateContent({
+        mode: "creative",
+        stage: selectedStage,
+        brief: brief,
+        persona: selectedPersona,
+        product: selectedProduct,
+      });
       setOutput(res);
-      void save({ data: { mode: "creative", stage, persona, product, brief, output: res } }).catch(() => {});
+      void save({ data: { mode: "creative", stage: selectedStage, persona: selectedPersona, product: selectedProduct, brief, output: res } }).catch(() => {});
     } catch (e) {
       setError(e instanceof Error ? e.message : "Generation failed");
     } finally {
@@ -46,7 +52,7 @@ function CreativePage() {
         <div className="space-y-6">
           <div>
             <Label>Stage</Label>
-            <PillTabs options={STAGES} value={stage} onChange={setStage} />
+            <PillTabs options={STAGES} value={selectedStage} onChange={setSelectedStage} />
           </div>
           <div>
             <Label>Brief</Label>
@@ -63,7 +69,7 @@ function CreativePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label>Persona</Label>
-              <Field as="select" value={persona} onChange={(e) => setPersona(e.target.value)}>
+              <Field as="select" value={selectedPersona} onChange={(e) => setSelectedPersona(e.target.value)}>
                 {PERSONAS.map((p) => (
                   <option key={p} value={p}>{p}</option>
                 ))}
@@ -71,7 +77,7 @@ function CreativePage() {
             </div>
             <div>
               <Label>Product</Label>
-              <Field as="select" value={product} onChange={(e) => setProduct(e.target.value)}>
+              <Field as="select" value={selectedProduct} onChange={(e) => setSelectedProduct(e.target.value)}>
                 {PRODUCTS.map((p) => (
                   <option key={p} value={p}>{p}</option>
                 ))}
