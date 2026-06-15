@@ -9,8 +9,26 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ThoughtLeadershipRouteImport } from './routes/thought-leadership'
+import { Route as StaticSocialRouteImport } from './routes/static-social'
+import { Route as CreativeRouteImport } from './routes/creative'
 import { Route as IndexRouteImport } from './routes/index'
 
+const ThoughtLeadershipRoute = ThoughtLeadershipRouteImport.update({
+  id: '/thought-leadership',
+  path: '/thought-leadership',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StaticSocialRoute = StaticSocialRouteImport.update({
+  id: '/static-social',
+  path: '/static-social',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreativeRoute = CreativeRouteImport.update({
+  id: '/creative',
+  path: '/creative',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -19,28 +37,61 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/creative': typeof CreativeRoute
+  '/static-social': typeof StaticSocialRoute
+  '/thought-leadership': typeof ThoughtLeadershipRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/creative': typeof CreativeRoute
+  '/static-social': typeof StaticSocialRoute
+  '/thought-leadership': typeof ThoughtLeadershipRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/creative': typeof CreativeRoute
+  '/static-social': typeof StaticSocialRoute
+  '/thought-leadership': typeof ThoughtLeadershipRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/creative' | '/static-social' | '/thought-leadership'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/creative' | '/static-social' | '/thought-leadership'
+  id: '__root__' | '/' | '/creative' | '/static-social' | '/thought-leadership'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CreativeRoute: typeof CreativeRoute
+  StaticSocialRoute: typeof StaticSocialRoute
+  ThoughtLeadershipRoute: typeof ThoughtLeadershipRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/thought-leadership': {
+      id: '/thought-leadership'
+      path: '/thought-leadership'
+      fullPath: '/thought-leadership'
+      preLoaderRoute: typeof ThoughtLeadershipRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/static-social': {
+      id: '/static-social'
+      path: '/static-social'
+      fullPath: '/static-social'
+      preLoaderRoute: typeof StaticSocialRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creative': {
+      id: '/creative'
+      path: '/creative'
+      fullPath: '/creative'
+      preLoaderRoute: typeof CreativeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -53,6 +104,9 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CreativeRoute: CreativeRoute,
+  StaticSocialRoute: StaticSocialRoute,
+  ThoughtLeadershipRoute: ThoughtLeadershipRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
