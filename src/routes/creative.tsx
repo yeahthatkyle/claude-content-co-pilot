@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { ModeShell, Button, Card, Label, Field, CopyButton, PillTabs } from "@/components/Shell";
-import { runGeneration, saveGeneration } from "@/lib/generate.functions";
+import { saveGeneration } from "@/lib/generate.functions";
+import { generateContent } from "@/services/claude";
 
 export const Route = createFileRoute("/creative")({
   head: () => ({ meta: [{ title: "Creative — Corpay Content Engine" }] }),
@@ -14,7 +15,7 @@ const PERSONAS = ["All Personas", "Fleet Guy", "T&E Traveler", "Barb (AP Manager
 const PRODUCTS = ["Multi-Card", "AP Automation", "International Payments", "Brand"] as const;
 
 function CreativePage() {
-  const generate = useServerFn(runGeneration);
+  
   const save = useServerFn(saveGeneration);
   const [stage, setStage] = useState<(typeof STAGES)[number]>("Idea");
   const [brief, setBrief] = useState("");
@@ -29,9 +30,7 @@ function CreativePage() {
     setError(null);
     setOutput("");
     try {
-      const res = await generate({
-        data: { mode: "creative", stage, persona, product, brief, action: "generate" },
-      });
+      const res = await generateContent({ mode: "creative", stage, persona, product, brief });
       setOutput(res.body);
       void save({ data: { mode: "creative", stage, persona, product, brief, output: res.body } }).catch(() => {});
     } catch (e) {
@@ -81,7 +80,7 @@ function CreativePage() {
           </div>
           <div>
             <Button onClick={onGenerate} disabled={loading}>
-              {loading ? "Generating…" : "Generate"}
+              {loading ? (<span className="inline-flex items-center gap-2"><Spinner />Generating…</span>) : "Generate"}
             </Button>
           </div>
         </div>
