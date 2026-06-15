@@ -51,7 +51,6 @@ function parseVariations(text: string): Variation[] {
 }
 
 function StaticPage() {
-  const generate = useServerFn(runGeneration);
   const save = useServerFn(saveGeneration);
   const [assetType, setAssetType] = useState<(typeof ASSET_TYPES)[number]>("Social Post");
   const [platform, setPlatform] = useState<(typeof PLATFORMS)[number]>("LinkedIn");
@@ -66,9 +65,7 @@ function StaticPage() {
     setError(null);
     setVariations([]);
     try {
-      const res = await generate({
-        data: { mode: "static-social", assetType, platform, persona, brief, action: "generate" },
-      });
+      const res = await generateContent({ mode: "static-social", assetType, platform, persona, brief });
       setVariations(parseVariations(res.body));
       void save({
         data: {
