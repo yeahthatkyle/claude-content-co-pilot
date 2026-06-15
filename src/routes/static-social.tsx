@@ -33,7 +33,7 @@ function parseVariations(text: string): Variation[] {
     const get = (k: string) => {
       const re = new RegExp(`${k}:\\s*([^\\n]+(?:\\n(?!\\w[\\w ]*:)[^\\n]+)*)`, "i");
       const m = p.match(re);
-      return (m ? m[1] : "").trim();
+      return (m ? m[1] : "").trim().replace(/^\*+\s*/, "").replace(/\s*\*+$/, "");
     };
     return {
       label,
@@ -152,7 +152,6 @@ function StaticPage() {
                 <Row label="Body Copy" value={v.body} />
                 <Row label="CTA" value={v.cta} />
                 <Row label="Visual Direction" value={v.visual} />
-                <Row label="Persona" value={v.persona} />
                 <Row label="Platform Note" value={v.platformNote} />
               </div>
             </Card>

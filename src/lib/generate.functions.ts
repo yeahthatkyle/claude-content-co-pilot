@@ -124,18 +124,26 @@ Platform: ${data.platform ?? "LinkedIn"}
 Persona: ${data.persona ?? "All Personas"}
 Brief: ${data.brief ?? "(none)"}
 ${oohRules}
-Produce exactly 3 variations labeled A, B, C. Each variation MUST use this exact format:
+Produce exactly 3 variations labeled A, B, C. Use EXACTLY this format — plain text only, no markdown bold or italic markers anywhere, no extra lines between fields:
 
 ### Variation A
-Headline: ...
-Subhead: ...
-Body Copy: ...
-CTA: ...
-Visual Direction: ...
-Persona: ${data.persona ?? "All Personas"}
-Platform Note: ...
+Headline: [headline text]
+Subhead: [subhead text or leave blank]
+Body Copy: [body copy or leave blank]
+CTA: [cta text]
+Visual Direction: [visual direction]
+Platform Note: [platform-specific note]
 
-Repeat for B and C. Make the 3 variations creatively distinct (different angle/insight each), not minor rewrites.`;
+### Variation B
+...
+
+### Variation C
+...
+
+Rules:
+- Field names must appear exactly as shown above — no asterisks, no colons doubled, no extra formatting.
+- Each variation must take a genuinely different angle or insight. Not minor rewrites.
+- If a field is not applicable (e.g. Body Copy on a billboard), write "—" not a blank line.`;
     const body = await callClaude(system, user);
     return { body, topics: [] };
   });
