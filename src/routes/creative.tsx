@@ -17,10 +17,10 @@ const PRODUCTS = ["Multi-Card", "AP Automation", "International Payments", "Bran
 function CreativePage() {
   
   const save = useServerFn(saveGeneration);
-  const [stage, setStage] = useState<(typeof STAGES)[number]>("Idea");
+  const [selectedStage, setSelectedStage] = useState<(typeof STAGES)[number]>("Idea");
   const [brief, setBrief] = useState("");
-  const [persona, setPersona] = useState<string>(PERSONAS[0]);
-  const [product, setProduct] = useState<string>(PRODUCTS[0]);
+  const [selectedPersona, setSelectedPersona] = useState<string>(PERSONAS[0]);
+  const [selectedProduct, setSelectedProduct] = useState<string>(PRODUCTS[0]);
   const [isLoading, setIsLoading] = useState(false);
   const [output, setOutput] = useState("");
   const [error, setError] = useState<string | null>(null);
