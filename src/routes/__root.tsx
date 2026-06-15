@@ -86,6 +86,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "Corpay Content Engine" },
+      { name: "twitter:description", content: "AI content engine for the Corpay marketing team, powered by Claude." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/879ffcd8-86fb-4bb1-a3e9-b7693e921531/id-preview-dd55ad6b--f412d65e-87a3-4e8b-8b65-e0d6337f8354.lovable.app-1781545539552.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/879ffcd8-86fb-4bb1-a3e9-b7693e921531/id-preview-dd55ad6b--f412d65e-87a3-4e8b-8b65-e0d6337f8354.lovable.app-1781545539552.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
