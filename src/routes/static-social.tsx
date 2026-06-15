@@ -65,14 +65,20 @@ function StaticPage() {
     setError(null);
     setVariations([]);
     try {
-      const res = await generateContent({ mode: "static-social", assetType, platform, persona, brief });
+      const res = await generateContent({
+        mode: "static-social",
+        assetType: selectedAssetType,
+        platform: selectedPlatform,
+        persona: selectedPersona,
+        brief: brief,
+      });
       setVariations(parseVariations(res));
       void save({
         data: {
           mode: "static-social",
-          stage: assetType,
-          persona,
-          product: platform,
+          stage: selectedAssetType,
+          persona: selectedPersona,
+          product: selectedPlatform,
           brief,
           output: res,
         },
