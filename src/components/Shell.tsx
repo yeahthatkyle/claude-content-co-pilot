@@ -132,6 +132,76 @@ export function PillTabs<T extends string>({
   );
 }
 
+export function Stepper({
+  steps,
+  activeIndex,
+  onRevert,
+}: {
+  steps: readonly string[];
+  activeIndex: number;
+  onRevert: (index: number) => void;
+}) {
+  return (
+    <div className="flex items-center flex-wrap gap-y-2 mb-8">
+      {steps.map((step, i) => {
+        const done = i < activeIndex;
+        const active = i === activeIndex;
+        const future = i > activeIndex;
+        return (
+          <div key={step} className="flex items-center">
+            {i > 0 && (
+              <span className={`mx-2 text-xs ${done ? "text-primary" : "text-border"}`}>→</span>
+            )}
+            <button
+              type="button"
+              disabled={future}
+              onClick={() => done && onRevert(i)}
+              className={`text-xs px-3 py-1.5 rounded-full transition-colors whitespace-nowrap ${
+                active
+                  ? "bg-primary text-primary-foreground font-semibold"
+                  : done
+                  ? "border border-primary/60 text-primary hover:border-primary cursor-pointer"
+                  : "text-border cursor-default"
+              }`}
+            >
+              {done ? `✓ ${step}` : step}
+            </button>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+export function ImageCard({ url, alt, loading }: { url?: string; alt: string; loading?: boolean }) {
+  if (loading) {
+    return (
+      <div className="w-full aspect-video rounded-md border border-border bg-surface flex items-center justify-center">
+        <span className="inline-flex items-center gap-2 text-xs text-muted-foreground">
+          <Spinner />Generating image…
+        </span>
+      </div>
+    );
+  }
+  if (!url) return null;
+  return (
+    <div className="mt-3 rounded-md overflow-hidden border border-border">
+      <img src={url} alt={alt} className="w-full object-cover" />
+      <div className="flex justify-end p-2 bg-surface">
+        <a
+          href={url}
+          download
+          target="_blank"
+          rel="noreferrer"
+          className="text-xs text-muted-foreground hover:text-foreground"
+        >
+          Download ↓
+        </a>
+      </div>
+    </div>
+  );
+}
+
 export function Spinner({ className = "" }: { className?: string }) {
   return (
     <span

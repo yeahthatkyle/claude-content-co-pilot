@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { ModeShell, Button, Card, Label, Field, CopyButton, PillTabs, Spinner } from "@/components/Shell";
-import { runGeneration, saveGeneration } from "@/lib/generate.functions";
+import { ModeShell, Button, Card, Label, Field, CopyButton, PillTabs, Spinner, ImageCard } from "@/components/Shell";
+import { runGeneration, saveGeneration, generateImage } from "@/lib/generate.functions";
 
 export const Route = createFileRoute("/static-social")({
   head: () => ({ meta: [{ title: "Static & Social — Corpay Content Engine" }] }),
@@ -33,7 +33,7 @@ function parseVariations(text: string): Variation[] {
     const get = (k: string) => {
       const re = new RegExp(`${k}:\\s*([^\\n]+(?:\\n(?!\\w[\\w ]*:)[^\\n]+)*)`, "i");
       const m = p.match(re);
-      return (m ? m[1] : "").trim();
+      return (m ? m[1] : "").trim().replace(/^\*+\s*/, "").replace(/\s*\*+$/, "");
     };
     return {
       label,
@@ -52,6 +52,7 @@ function parseVariations(text: string): Variation[] {
 function StaticPage() {
   const generate = useServerFn(runGeneration);
   const save = useServerFn(saveGeneration);
+  const doImage = useServerFn(generateImage);
   const [selectedAssetType, setSelectedAssetType] = useState<(typeof ASSET_TYPES)[number]>("Social Post");
   const [selectedPlatform, setSelectedPlatform] = useState<(typeof PLATFORMS)[number]>("LinkedIn");
   const [selectedPersona, setSelectedPersona] = useState<string>(PERSONAS[0]);
@@ -59,6 +60,20 @@ function StaticPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [variations, setVariations] = useState<Variation[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [images, setImages] = useState<Record<string, string>>({});
+  const [imageLoading, setImageLoading] = useState<Record<string, boolean>>({});
+
+  const genImage = async (key: string, prompt: string) => {
+    setImageLoading((prev) => ({ ...prev, [key]: true }));
+    try {
+      const res = await doImage({ data: { prompt, aspectRatio: "square_hd" } });
+      setImages((prev) => ({ ...prev, [key]: res.imageUrl }));
+    } catch (e) {
+      console.error("Image gen failed", e);
+    } finally {
+      setImageLoading((prev) => ({ ...prev, [key]: false }));
+    }
+  };
 
   const onGenerate = async () => {
     setIsLoading(true);
@@ -152,7 +167,20 @@ function StaticPage() {
                 <Row label="Body Copy" value={v.body} />
                 <Row label="CTA" value={v.cta} />
                 <Row label="Visual Direction" value={v.visual} />
-                <Row label="Persona" value={v.persona} />
+                {v.visual && v.visual !== "—" && (
+                  <div className="pt-1">
+                    <Button
+                      variant="outline"
+                      onClick={() => genImage(`var-${v.label}`, v.visual.slice(0, 400))}
+                      disabled={!!imageLoading[`var-${v.label}`]}
+                    >
+                      {imageLoading[`var-${v.label}`]
+                        ? <span className="inline-flex items-center gap-2"><Spinner />Generating…</span>
+                        : "Comp this →"}
+                    </Button>
+                    <ImageCard url={images[`var-${v.label}`]} alt={`Ad comp ${v.label}`} loading={imageLoading[`var-${v.label}`]} />
+                  </div>
+                )}
                 <Row label="Platform Note" value={v.platformNote} />
               </div>
             </Card>

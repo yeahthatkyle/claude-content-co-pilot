@@ -124,18 +124,26 @@ Platform: ${data.platform ?? "LinkedIn"}
 Persona: ${data.persona ?? "All Personas"}
 Brief: ${data.brief ?? "(none)"}
 ${oohRules}
-Produce exactly 3 variations labeled A, B, C. Each variation MUST use this exact format:
+Produce exactly 3 variations labeled A, B, C. Use EXACTLY this format — plain text only, no markdown bold or italic markers anywhere, no extra lines between fields:
 
 ### Variation A
-Headline: ...
-Subhead: ...
-Body Copy: ...
-CTA: ...
-Visual Direction: ...
-Persona: ${data.persona ?? "All Personas"}
-Platform Note: ...
+Headline: [headline text]
+Subhead: [subhead text or leave blank]
+Body Copy: [body copy or leave blank]
+CTA: [cta text]
+Visual Direction: [visual direction]
+Platform Note: [platform-specific note]
 
-Repeat for B and C. Make the 3 variations creatively distinct (different angle/insight each), not minor rewrites.`;
+### Variation B
+...
+
+### Variation C
+...
+
+Rules:
+- Field names must appear exactly as shown above — no asterisks, no colons doubled, no extra formatting.
+- Each variation must take a genuinely different angle or insight. Not minor rewrites.
+- If a field is not applicable (e.g. Body Copy on a billboard), write "—" not a blank line.`;
     const body = await callClaude(system, user);
     return { body, topics: [] };
   });
@@ -163,6 +171,37 @@ export const saveGeneration = createServerFn({ method: "POST" })
     });
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+export const generateImage = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) =>
+    z.object({
+      prompt: z.string(),
+      aspectRatio: z.enum(["landscape_4_3", "landscape_16_9", "square_hd", "portrait_4_3"]).default("landscape_4_3"),
+    }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    const falKey = process.env.FAL_API_KEY;
+    if (!falKey) throw new Error("FAL_API_KEY is not configured");
+    const resp = await fetch("https://fal.run/fal-ai/flux/dev", {
+      method: "POST",
+      headers: {
+        Authorization: `Key ${falKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        prompt: data.prompt,
+        image_size: data.aspectRatio,
+        num_images: 1,
+        num_inference_steps: 28,
+      }),
+    });
+    if (!resp.ok) {
+      const t = await resp.text();
+      throw new Error(`Image generation failed (${resp.status}): ${t.slice(0, 300)}`);
+    }
+    const json = (await resp.json()) as { images: Array<{ url: string }> };
+    return { imageUrl: json.images?.[0]?.url ?? "" };
   });
 
 export const getGenerations = createServerFn({ method: "POST" })
