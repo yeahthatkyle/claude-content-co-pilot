@@ -46,9 +46,7 @@ function TLPage() {
     setBlog("");
     setLinkedin("");
     try {
-      const res = await generate({
-        data: { mode: "thought-leadership", topic, tone, action: "generate" },
-      });
+      const res = await generateContent({ mode: "thought-leadership", topic, tone });
       const [b, li] = res.body.split(/---LINKEDIN---/i);
       setBlog((b ?? res.body).trim());
       setLinkedin((li ?? "").trim());
@@ -99,7 +97,7 @@ function TLPage() {
           </div>
           <div>
             <Button onClick={onGenerate} disabled={loading || !topic.trim()}>
-              {loading ? "Generating…" : "Generate"}
+              {loading ? (<span className="inline-flex items-center gap-2"><Spinner />Generating…</span>) : "Generate"}
             </Button>
           </div>
         </div>

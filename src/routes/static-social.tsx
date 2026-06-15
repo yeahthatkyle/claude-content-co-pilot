@@ -118,7 +118,7 @@ function StaticPage() {
           </div>
           <div>
             <Button onClick={onGenerate} disabled={loading}>
-              {loading ? "Generating…" : "Generate"}
+              {loading ? (<span className="inline-flex items-center gap-2"><Spinner />Generating…</span>) : "Generate"}
             </Button>
           </div>
         </div>
