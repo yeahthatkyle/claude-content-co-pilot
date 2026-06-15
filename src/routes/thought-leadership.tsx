@@ -41,22 +41,34 @@ function TLPage() {
 
   const onGenerate = async () => {
     if (!topic.trim()) return;
-    setLoading(true);
+    setIsLoading(true);
     setError(null);
     setBlog("");
     setLinkedin("");
     try {
-      const res = await generateContent({ mode: "thought-leadership", topic, tone });
-      const [b, li] = res.body.split(/---LINKEDIN---/i);
-      setBlog((b ?? res.body).trim());
-      setLinkedin((li ?? "").trim());
+      const result = await generateContent({
+        mode: "thought-leadership",
+        topic,
+        tone,
+        suggestTopics: false,
+      });
+      const linkedinMarker = "─────────────────────────────\nLINKEDIN POST";
+      const idx = result.indexOf(linkedinMarker);
+      if (idx !== -1) {
+        setBlog(result.substring(0, idx).trim());
+        setLinkedin(result.substring(idx + linkedinMarker.length).trim());
+      } else {
+        const [b, li] = result.split(/LINKEDIN POST/i);
+        setBlog((b ?? result).trim());
+        setLinkedin((li ?? "").trim());
+      }
       void save({
-        data: { mode: "thought-leadership", brief: `${topic} | ${tone}`, output: res.body },
+        data: { mode: "thought-leadership", brief: `${topic} | ${tone}`, output: result },
       }).catch(() => {});
     } catch (e) {
       setError(e instanceof Error ? e.message : "Generation failed");
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
