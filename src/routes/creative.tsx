@@ -25,11 +25,14 @@ function parseIdeaConcepts(text: string): string[] {
   return concepts.length > 1 ? concepts : [text];
 }
 
-function parseMoodboardRefs(text: string): string[] {
-  const parts = text.split(/(?=#+\s*(?:Reference|Visual Reference|\d+\.)\s*)/i).filter(Boolean);
-  return parts.length > 1
-    ? parts.map((p) => p.trim()).filter(Boolean)
-    : text.split(/\n{2,}/).filter((p) => p.trim().length > 30);
+function buildMoodboardImagePrompt(text: string): string {
+  // Strip markdown headers and bullet leaders, collect the most descriptive lines
+  const lines = text
+    .split("\n")
+    .map((l) => l.replace(/^#{1,4}\s*/, "").replace(/^[-*]\s*/, "").trim())
+    .filter((l) => l.length > 15 && !/^(motion feel|sound design|typography)/i.test(l));
+  const body = lines.slice(0, 10).join(". ").replace(/\.{2,}/g, ".").slice(0, 600);
+  return `Advertising moodboard composition. ${body}. Commercial photography, high production value, cinematic lighting, editorial quality.`;
 }
 
 function parseStoryboardFrames(text: string): { visual: string; label: string }[] {
@@ -121,18 +124,19 @@ function CreativePage() {
 
   const genImage = async (key: string, prompt: string, aspectRatio: "landscape_4_3" | "landscape_16_9") => {
     setImageLoading((prev) => ({ ...prev, [key]: true }));
+    setImages((prev) => { const next = { ...prev }; delete next[key]; return next; });
     try {
       const res = await doImage({ data: { prompt, aspectRatio } });
       setImages((prev) => ({ ...prev, [key]: res.imageUrl }));
     } catch (e) {
-      console.error("Image gen failed", e);
+      setError(e instanceof Error ? e.message : "Image generation failed");
     } finally {
       setImageLoading((prev) => ({ ...prev, [key]: false }));
     }
   };
 
   const ideaConcepts = activeStage === "Idea" && output ? parseIdeaConcepts(output) : null;
-  const moodRefs = activeStage === "Moodboard" && output ? parseMoodboardRefs(output) : null;
+  const isMoodboard = activeStage === "Moodboard" && !!output;
   const storyFrames = activeStage === "Storyboard" && output ? parseStoryboardFrames(output) : null;
 
   return (
@@ -240,34 +244,29 @@ function CreativePage() {
         </div>
       )}
 
-      {/* Moodboard: visual refs with image gen */}
-      {moodRefs && (
+      {/* Moodboard: full output + single Envision board */}
+      {isMoodboard && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Moodboard</p>
-            <CopyButton text={output} />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {moodRefs.map((ref, i) => {
-              const key = `mood-${i}`;
-              return (
-                <Card key={i}>
-                  <Markdown content={ref} />
-                  <div className="mt-3">
-                    <Button
-                      variant="outline"
-                      onClick={() => genImage(key, ref.replace(/^#+[^\n]*\n/, "").trim().slice(0, 400), "landscape_4_3")}
-                      disabled={!!imageLoading[key]}
-                    >
-                      {imageLoading[key] ? <span className="inline-flex items-center gap-2"><Spinner />Generating…</span> : "Envision →"}
-                    </Button>
-                    <ImageCard url={images[key]} alt={`Moodboard ref ${i + 1}`} loading={imageLoading[key]} />
-                  </div>
-                </Card>
-              );
-            })}
-          </div>
-          <ApproveBar stage={activeStage} onApprove={approve} isLast={activeIndex === STAGES.length - 1} />
+          <Card>
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Moodboard</p>
+              <CopyButton text={output} />
+            </div>
+            <Markdown content={output} />
+            <div className="mt-6 pt-4 border-t border-border flex gap-3 items-center flex-wrap">
+              <Button
+                variant="outline"
+                onClick={() => genImage("moodboard", buildMoodboardImagePrompt(output), "landscape_4_3")}
+                disabled={!!imageLoading["moodboard"]}
+              >
+                {imageLoading["moodboard"]
+                  ? <span className="inline-flex items-center gap-2"><Spinner />Envisioning…</span>
+                  : images["moodboard"] ? "Re-envision →" : "Envision this board →"}
+              </Button>
+              <ApproveBar stage={activeStage} onApprove={approve} isLast={activeIndex === STAGES.length - 1} />
+            </div>
+            <ImageCard url={images["moodboard"]} alt="Moodboard" loading={imageLoading["moodboard"]} />
+          </Card>
         </div>
       )}
 
@@ -304,7 +303,7 @@ function CreativePage() {
       )}
 
       {/* Default output for Script / Execution Round / Final (and Idea fallback) */}
-      {output && !ideaConcepts?.length && !moodRefs && !storyFrames && (
+      {output && !ideaConcepts?.length && !isMoodboard && !storyFrames && (
         <Card>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-medium uppercase tracking-wider text-muted-foreground">{activeStage}</h2>

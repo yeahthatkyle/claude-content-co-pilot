@@ -183,7 +183,8 @@ export const generateImage = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const falKey = process.env.FAL_API_KEY;
     if (!falKey) throw new Error("FAL_API_KEY is not configured");
-    const resp = await fetch("https://fal.run/fal-ai/flux/dev", {
+    // fal.ai Flux Dev — synchronous endpoint
+    const resp = await fetch("https://fal.run/fal-ai/flux-dev", {
       method: "POST",
       headers: {
         Authorization: `Key ${falKey}`,
@@ -194,14 +195,17 @@ export const generateImage = createServerFn({ method: "POST" })
         image_size: data.aspectRatio,
         num_images: 1,
         num_inference_steps: 28,
+        guidance_scale: 3.5,
       }),
     });
     if (!resp.ok) {
       const t = await resp.text();
-      throw new Error(`Image generation failed (${resp.status}): ${t.slice(0, 300)}`);
+      throw new Error(`Image generation failed (${resp.status}): ${t.slice(0, 400)}`);
     }
-    const json = (await resp.json()) as { images: Array<{ url: string }> };
-    return { imageUrl: json.images?.[0]?.url ?? "" };
+    const json = (await resp.json()) as { images?: Array<{ url: string }>; image?: { url: string } };
+    const imageUrl = json.images?.[0]?.url ?? (json.image as { url: string } | undefined)?.url ?? "";
+    if (!imageUrl) throw new Error("No image URL returned from fal.ai");
+    return { imageUrl };
   });
 
 export const getGenerations = createServerFn({ method: "POST" })
