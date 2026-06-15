@@ -108,8 +108,8 @@ function TLPage() {
             <PillTabs options={TONES} value={tone} onChange={setTone} />
           </div>
           <div>
-            <Button onClick={onGenerate} disabled={loading || !topic.trim()}>
-              {loading ? (<span className="inline-flex items-center gap-2"><Spinner />Generating…</span>) : "Generate"}
+            <Button onClick={onGenerate} disabled={isLoading || !topic.trim()}>
+              {isLoading ? (<span className="inline-flex items-center gap-2"><Spinner />Generating…</span>) : "Generate"}
             </Button>
           </div>
         </div>

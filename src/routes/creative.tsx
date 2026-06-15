@@ -21,22 +21,22 @@ function CreativePage() {
   const [brief, setBrief] = useState("");
   const [persona, setPersona] = useState<string>(PERSONAS[0]);
   const [product, setProduct] = useState<string>(PRODUCTS[0]);
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [output, setOutput] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const onGenerate = async () => {
-    setLoading(true);
+    setIsLoading(true);
     setError(null);
     setOutput("");
     try {
       const res = await generateContent({ mode: "creative", stage, persona, product, brief });
-      setOutput(res.body);
-      void save({ data: { mode: "creative", stage, persona, product, brief, output: res.body } }).catch(() => {});
+      setOutput(res);
+      void save({ data: { mode: "creative", stage, persona, product, brief, output: res } }).catch(() => {});
     } catch (e) {
       setError(e instanceof Error ? e.message : "Generation failed");
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -79,8 +79,8 @@ function CreativePage() {
             </div>
           </div>
           <div>
-            <Button onClick={onGenerate} disabled={loading}>
-              {loading ? (<span className="inline-flex items-center gap-2"><Spinner />Generating…</span>) : "Generate"}
+            <Button onClick={onGenerate} disabled={isLoading}>
+              {isLoading ? (<span className="inline-flex items-center gap-2"><Spinner />Generating…</span>) : "Generate"}
             </Button>
           </div>
         </div>

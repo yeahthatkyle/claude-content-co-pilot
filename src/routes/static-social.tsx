@@ -56,17 +56,17 @@ function StaticPage() {
   const [platform, setPlatform] = useState<(typeof PLATFORMS)[number]>("LinkedIn");
   const [persona, setPersona] = useState<string>(PERSONAS[0]);
   const [brief, setBrief] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [variations, setVariations] = useState<Variation[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const onGenerate = async () => {
-    setLoading(true);
+    setIsLoading(true);
     setError(null);
     setVariations([]);
     try {
       const res = await generateContent({ mode: "static-social", assetType, platform, persona, brief });
-      setVariations(parseVariations(res.body));
+      setVariations(parseVariations(res));
       void save({
         data: {
           mode: "static-social",
@@ -74,13 +74,13 @@ function StaticPage() {
           persona,
           product: platform,
           brief,
-          output: res.body,
+          output: res,
         },
       }).catch(() => {});
     } catch (e) {
       setError(e instanceof Error ? e.message : "Generation failed");
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -117,8 +117,8 @@ function StaticPage() {
             />
           </div>
           <div>
-            <Button onClick={onGenerate} disabled={loading}>
-              {loading ? (<span className="inline-flex items-center gap-2"><Spinner />Generating…</span>) : "Generate"}
+            <Button onClick={onGenerate} disabled={isLoading}>
+              {isLoading ? (<span className="inline-flex items-center gap-2"><Spinner />Generating…</span>) : "Generate"}
             </Button>
           </div>
         </div>
