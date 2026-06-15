@@ -19,7 +19,7 @@ function TLPage() {
   const [tone, setTone] = useState<(typeof TONES)[number]>("Authoritative");
   const [suggesting, setSuggesting] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [blog, setBlog] = useState("");
   const [linkedin, setLinkedin] = useState("");
   const [error, setError] = useState<string | null>(null);
