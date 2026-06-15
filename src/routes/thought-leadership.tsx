@@ -1,9 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { ModeShell, Button, Card, Label, Field, CopyButton, PillTabs, Spinner } from "@/components/Shell";
+import { ModeShell, Button, Card, Label, Field, CopyButton, PillTabs, Spinner, Markdown } from "@/components/Shell";
 import { runGeneration, saveGeneration } from "@/lib/generate.functions";
-import { generateContent } from "@/services/claude";
 
 export const Route = createFileRoute("/thought-leadership")({
   head: () => ({ meta: [{ title: "Thought Leadership — Corpay Content Engine" }] }),
@@ -33,7 +32,7 @@ function TLPage() {
       });
       setSuggestions(res.topics);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed");
+      setError(e instanceof Error ? e.message : "Failed to suggest topics");
     } finally {
       setSuggesting(false);
     }
@@ -46,24 +45,15 @@ function TLPage() {
     setBlog("");
     setLinkedin("");
     try {
-      const result = await generateContent({
-        mode: "thought-leadership",
-        topic,
-        tone,
-        suggestTopics: false,
+      const res = await generate({
+        data: { mode: "thought-leadership", topic, tone },
       });
-      const linkedinMarker = "─────────────────────────────\nLINKEDIN POST";
-      const idx = result.indexOf(linkedinMarker);
-      if (idx !== -1) {
-        setBlog(result.substring(0, idx).trim());
-        setLinkedin(result.substring(idx + linkedinMarker.length).trim());
-      } else {
-        const [b, li] = result.split(/LINKEDIN POST/i);
-        setBlog((b ?? result).trim());
-        setLinkedin((li ?? "").trim());
-      }
+      const body = res.body;
+      const [blogPart, linkedinPart] = body.split("---LINKEDIN---");
+      setBlog((blogPart ?? body).trim());
+      setLinkedin((linkedinPart ?? "").trim());
       void save({
-        data: { mode: "thought-leadership", brief: `${topic} | ${tone}`, output: result },
+        data: { mode: "thought-leadership", brief: `${topic} | ${tone}`, output: body },
       }).catch(() => {});
     } catch (e) {
       setError(e instanceof Error ? e.message : "Generation failed");
@@ -85,7 +75,7 @@ function TLPage() {
                 onChange={(e) => setTopic(e.target.value)}
               />
               <Button variant="outline" onClick={onSuggest} disabled={suggesting}>
-                {suggesting ? "…" : "Suggest a Topic"}
+                {suggesting ? <span className="inline-flex items-center gap-1"><Spinner />Suggesting…</span> : "Suggest a Topic"}
               </Button>
             </div>
             {suggestions.length > 0 && (
@@ -94,8 +84,8 @@ function TLPage() {
                   <button
                     key={s}
                     type="button"
-                    onClick={() => setTopic(s)}
-                    className="text-xs px-3 py-1.5 rounded-full border border-border bg-surface text-foreground hover:border-primary"
+                    onClick={() => { setTopic(s); setSuggestions([]); }}
+                    className="text-xs px-3 py-1.5 rounded-full border border-border bg-surface text-foreground hover:border-primary hover:text-primary transition-colors"
                   >
                     {s}
                   </button>
@@ -117,7 +107,7 @@ function TLPage() {
 
       {error && (
         <Card className="border-destructive/50 mb-6">
-          <p className="text-sm text-destructive-foreground">{error}</p>
+          <p className="text-sm text-destructive">{error}</p>
         </Card>
       )}
 
@@ -128,14 +118,14 @@ function TLPage() {
               <h2 className="text-sm font-medium uppercase tracking-wider text-muted-foreground">Blog Post</h2>
               <CopyButton text={blog} />
             </div>
-            <pre className="whitespace-pre-wrap text-sm leading-relaxed font-sans text-foreground">{blog}</pre>
+            <Markdown content={blog} />
           </Card>
           <Card>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-sm font-medium uppercase tracking-wider text-muted-foreground">LinkedIn Post</h2>
               <CopyButton text={linkedin} />
             </div>
-            <pre className="whitespace-pre-wrap text-sm leading-relaxed font-sans text-foreground">{linkedin}</pre>
+            <Markdown content={linkedin} />
           </Card>
         </div>
       )}

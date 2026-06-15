@@ -26,7 +26,7 @@ const MODES = [
   },
   {
     to: "/static-social",
-    emoji: "📐",
+    emoji: "🖼️",
     title: "Static & Social",
     desc: "Three A/B/C variations for social, digital, OOH, banners.",
   },
