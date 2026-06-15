@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { ModeShell, Button, Card, Label, Field, CopyButton, PillTabs } from "@/components/Shell";
+import { ModeShell, Button, Card, Label, Field, CopyButton, PillTabs, Spinner } from "@/components/Shell";
 import { runGeneration, saveGeneration } from "@/lib/generate.functions";
+import { generateContent } from "@/services/claude";
 
 export const Route = createFileRoute("/thought-leadership")({
   head: () => ({ meta: [{ title: "Thought Leadership — Corpay Content Engine" }] }),
