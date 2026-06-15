@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { ModeShell, Button, Card, Label, Field, CopyButton, PillTabs } from "@/components/Shell";
+import { ModeShell, Button, Card, Label, Field, CopyButton, PillTabs, Spinner } from "@/components/Shell";
 import { runGeneration, saveGeneration } from "@/lib/generate.functions";
+import { generateContent } from "@/services/claude";
 
 export const Route = createFileRoute("/thought-leadership")({
   head: () => ({ meta: [{ title: "Thought Leadership — Corpay Content Engine" }] }),
@@ -45,9 +46,7 @@ function TLPage() {
     setBlog("");
     setLinkedin("");
     try {
-      const res = await generate({
-        data: { mode: "thought-leadership", topic, tone, action: "generate" },
-      });
+      const res = await generateContent({ mode: "thought-leadership", topic, tone });
       const [b, li] = res.body.split(/---LINKEDIN---/i);
       setBlog((b ?? res.body).trim());
       setLinkedin((li ?? "").trim());
@@ -98,7 +97,7 @@ function TLPage() {
           </div>
           <div>
             <Button onClick={onGenerate} disabled={loading || !topic.trim()}>
-              {loading ? "Generating…" : "Generate"}
+              {loading ? (<span className="inline-flex items-center gap-2"><Spinner />Generating…</span>) : "Generate"}
             </Button>
           </div>
         </div>

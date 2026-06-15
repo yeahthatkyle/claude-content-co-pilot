@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { ModeShell, Button, Card, Label, Field, CopyButton, PillTabs } from "@/components/Shell";
-import { runGeneration, saveGeneration } from "@/lib/generate.functions";
+import { ModeShell, Button, Card, Label, Field, CopyButton, PillTabs, Spinner } from "@/components/Shell";
+import { saveGeneration } from "@/lib/generate.functions";
+import { generateContent } from "@/services/claude";
 
 export const Route = createFileRoute("/static-social")({
   head: () => ({ meta: [{ title: "Static & Social — Corpay Content Engine" }] }),
@@ -50,7 +51,6 @@ function parseVariations(text: string): Variation[] {
 }
 
 function StaticPage() {
-  const generate = useServerFn(runGeneration);
   const save = useServerFn(saveGeneration);
   const [assetType, setAssetType] = useState<(typeof ASSET_TYPES)[number]>("Social Post");
   const [platform, setPlatform] = useState<(typeof PLATFORMS)[number]>("LinkedIn");
@@ -65,9 +65,7 @@ function StaticPage() {
     setError(null);
     setVariations([]);
     try {
-      const res = await generate({
-        data: { mode: "static-social", assetType, platform, persona, brief, action: "generate" },
-      });
+      const res = await generateContent({ mode: "static-social", assetType, platform, persona, brief });
       setVariations(parseVariations(res.body));
       void save({
         data: {
@@ -120,7 +118,7 @@ function StaticPage() {
           </div>
           <div>
             <Button onClick={onGenerate} disabled={loading}>
-              {loading ? "Generating…" : "Generate"}
+              {loading ? (<span className="inline-flex items-center gap-2"><Spinner />Generating…</span>) : "Generate"}
             </Button>
           </div>
         </div>
