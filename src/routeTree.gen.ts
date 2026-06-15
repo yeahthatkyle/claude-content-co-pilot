@@ -9,22 +9,24 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as AuthRouteImport } from './routes/auth'
-import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as ThoughtLeadershipRouteImport } from './routes/thought-leadership'
+import { Route as StaticSocialRouteImport } from './routes/static-social'
+import { Route as CreativeRouteImport } from './routes/creative'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthenticatedResearchRouteImport } from './routes/_authenticated/research'
-import { Route as AuthenticatedLibraryRouteImport } from './routes/_authenticated/library'
-import { Route as AuthenticatedGeneratorRouteImport } from './routes/_authenticated/generator'
-import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
-import { Route as AuthenticatedBrandVoiceRouteImport } from './routes/_authenticated/brand-voice'
 
-const AuthRoute = AuthRouteImport.update({
-  id: '/auth',
-  path: '/auth',
+const ThoughtLeadershipRoute = ThoughtLeadershipRouteImport.update({
+  id: '/thought-leadership',
+  path: '/thought-leadership',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
-  id: '/_authenticated',
+const StaticSocialRoute = StaticSocialRouteImport.update({
+  id: '/static-social',
+  path: '/static-social',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreativeRoute = CreativeRouteImport.update({
+  id: '/creative',
+  path: '/creative',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -32,112 +34,62 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedResearchRoute = AuthenticatedResearchRouteImport.update({
-  id: '/research',
-  path: '/research',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedLibraryRoute = AuthenticatedLibraryRouteImport.update({
-  id: '/library',
-  path: '/library',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedGeneratorRoute = AuthenticatedGeneratorRouteImport.update({
-  id: '/generator',
-  path: '/generator',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedBrandVoiceRoute = AuthenticatedBrandVoiceRouteImport.update({
-  id: '/brand-voice',
-  path: '/brand-voice',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/auth': typeof AuthRoute
-  '/brand-voice': typeof AuthenticatedBrandVoiceRoute
-  '/dashboard': typeof AuthenticatedDashboardRoute
-  '/generator': typeof AuthenticatedGeneratorRoute
-  '/library': typeof AuthenticatedLibraryRoute
-  '/research': typeof AuthenticatedResearchRoute
+  '/creative': typeof CreativeRoute
+  '/static-social': typeof StaticSocialRoute
+  '/thought-leadership': typeof ThoughtLeadershipRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/auth': typeof AuthRoute
-  '/brand-voice': typeof AuthenticatedBrandVoiceRoute
-  '/dashboard': typeof AuthenticatedDashboardRoute
-  '/generator': typeof AuthenticatedGeneratorRoute
-  '/library': typeof AuthenticatedLibraryRoute
-  '/research': typeof AuthenticatedResearchRoute
+  '/creative': typeof CreativeRoute
+  '/static-social': typeof StaticSocialRoute
+  '/thought-leadership': typeof ThoughtLeadershipRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
-  '/auth': typeof AuthRoute
-  '/_authenticated/brand-voice': typeof AuthenticatedBrandVoiceRoute
-  '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
-  '/_authenticated/generator': typeof AuthenticatedGeneratorRoute
-  '/_authenticated/library': typeof AuthenticatedLibraryRoute
-  '/_authenticated/research': typeof AuthenticatedResearchRoute
+  '/creative': typeof CreativeRoute
+  '/static-social': typeof StaticSocialRoute
+  '/thought-leadership': typeof ThoughtLeadershipRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | '/'
-    | '/auth'
-    | '/brand-voice'
-    | '/dashboard'
-    | '/generator'
-    | '/library'
-    | '/research'
+  fullPaths: '/' | '/creative' | '/static-social' | '/thought-leadership'
   fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/'
-    | '/auth'
-    | '/brand-voice'
-    | '/dashboard'
-    | '/generator'
-    | '/library'
-    | '/research'
-  id:
-    | '__root__'
-    | '/'
-    | '/_authenticated'
-    | '/auth'
-    | '/_authenticated/brand-voice'
-    | '/_authenticated/dashboard'
-    | '/_authenticated/generator'
-    | '/_authenticated/library'
-    | '/_authenticated/research'
+  to: '/' | '/creative' | '/static-social' | '/thought-leadership'
+  id: '__root__' | '/' | '/creative' | '/static-social' | '/thought-leadership'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
-  AuthRoute: typeof AuthRoute
+  CreativeRoute: typeof CreativeRoute
+  StaticSocialRoute: typeof StaticSocialRoute
+  ThoughtLeadershipRoute: typeof ThoughtLeadershipRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
+    '/thought-leadership': {
+      id: '/thought-leadership'
+      path: '/thought-leadership'
+      fullPath: '/thought-leadership'
+      preLoaderRoute: typeof ThoughtLeadershipRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated': {
-      id: '/_authenticated'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+    '/static-social': {
+      id: '/static-social'
+      path: '/static-social'
+      fullPath: '/static-social'
+      preLoaderRoute: typeof StaticSocialRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creative': {
+      id: '/creative'
+      path: '/creative'
+      fullPath: '/creative'
+      preLoaderRoute: typeof CreativeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -147,67 +99,14 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/research': {
-      id: '/_authenticated/research'
-      path: '/research'
-      fullPath: '/research'
-      preLoaderRoute: typeof AuthenticatedResearchRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/library': {
-      id: '/_authenticated/library'
-      path: '/library'
-      fullPath: '/library'
-      preLoaderRoute: typeof AuthenticatedLibraryRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/generator': {
-      id: '/_authenticated/generator'
-      path: '/generator'
-      fullPath: '/generator'
-      preLoaderRoute: typeof AuthenticatedGeneratorRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/dashboard': {
-      id: '/_authenticated/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/brand-voice': {
-      id: '/_authenticated/brand-voice'
-      path: '/brand-voice'
-      fullPath: '/brand-voice'
-      preLoaderRoute: typeof AuthenticatedBrandVoiceRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
   }
 }
 
-interface AuthenticatedRouteRouteChildren {
-  AuthenticatedBrandVoiceRoute: typeof AuthenticatedBrandVoiceRoute
-  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
-  AuthenticatedGeneratorRoute: typeof AuthenticatedGeneratorRoute
-  AuthenticatedLibraryRoute: typeof AuthenticatedLibraryRoute
-  AuthenticatedResearchRoute: typeof AuthenticatedResearchRoute
-}
-
-const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedBrandVoiceRoute: AuthenticatedBrandVoiceRoute,
-  AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
-  AuthenticatedGeneratorRoute: AuthenticatedGeneratorRoute,
-  AuthenticatedLibraryRoute: AuthenticatedLibraryRoute,
-  AuthenticatedResearchRoute: AuthenticatedResearchRoute,
-}
-
-const AuthenticatedRouteRouteWithChildren =
-  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
-  AuthRoute: AuthRoute,
+  CreativeRoute: CreativeRoute,
+  StaticSocialRoute: StaticSocialRoute,
+  ThoughtLeadershipRoute: ThoughtLeadershipRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

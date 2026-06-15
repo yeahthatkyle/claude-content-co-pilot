@@ -148,6 +148,39 @@ export type Database = {
           },
         ]
       }
+      generations: {
+        Row: {
+          brief: string | null
+          created_at: string
+          id: string
+          mode: string
+          output: string
+          persona: string | null
+          product: string | null
+          stage: string | null
+        }
+        Insert: {
+          brief?: string | null
+          created_at?: string
+          id?: string
+          mode: string
+          output: string
+          persona?: string | null
+          product?: string | null
+          stage?: string | null
+        }
+        Update: {
+          brief?: string | null
+          created_at?: string
+          id?: string
+          mode?: string
+          output?: string
+          persona?: string | null
+          product?: string | null
+          stage?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
