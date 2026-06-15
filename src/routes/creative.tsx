@@ -1,9 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { ModeShell, Button, Card, Label, Field, CopyButton, PillTabs, Spinner } from "@/components/Shell";
-import { saveGeneration } from "@/lib/generate.functions";
-import { generateContent } from "@/services/claude";
+import { ModeShell, Button, Card, Label, Field, CopyButton, PillTabs, Spinner, Markdown } from "@/components/Shell";
+import { runGeneration, saveGeneration } from "@/lib/generate.functions";
 
 export const Route = createFileRoute("/creative")({
   head: () => ({ meta: [{ title: "Creative — Corpay Content Engine" }] }),
@@ -15,7 +14,7 @@ const PERSONAS = ["All Personas", "Fleet Guy", "T&E Traveler", "Barb (AP Manager
 const PRODUCTS = ["Multi-Card", "AP Automation", "International Payments", "Brand"] as const;
 
 function CreativePage() {
-  
+  const generate = useServerFn(runGeneration);
   const save = useServerFn(saveGeneration);
   const [selectedStage, setSelectedStage] = useState<(typeof STAGES)[number]>("Idea");
   const [brief, setBrief] = useState("");
@@ -30,15 +29,17 @@ function CreativePage() {
     setError(null);
     setOutput("");
     try {
-      const res = await generateContent({
-        mode: "creative",
-        stage: selectedStage,
-        brief: brief,
-        persona: selectedPersona,
-        product: selectedProduct,
+      const res = await generate({
+        data: {
+          mode: "creative",
+          stage: selectedStage,
+          brief,
+          persona: selectedPersona,
+          product: selectedProduct,
+        },
       });
-      setOutput(res);
-      void save({ data: { mode: "creative", stage: selectedStage, persona: selectedPersona, product: selectedProduct, brief, output: res } }).catch(() => {});
+      setOutput(res.body);
+      void save({ data: { mode: "creative", stage: selectedStage, persona: selectedPersona, product: selectedProduct, brief, output: res.body } }).catch(() => {});
     } catch (e) {
       setError(e instanceof Error ? e.message : "Generation failed");
     } finally {
@@ -94,7 +95,7 @@ function CreativePage() {
 
       {error && (
         <Card className="border-destructive/50 mb-6">
-          <p className="text-sm text-destructive-foreground">{error}</p>
+          <p className="text-sm text-destructive">{error}</p>
         </Card>
       )}
 
@@ -104,7 +105,7 @@ function CreativePage() {
             <h2 className="text-sm font-medium uppercase tracking-wider text-muted-foreground">Output</h2>
             <CopyButton text={output} />
           </div>
-          <pre className="whitespace-pre-wrap text-sm leading-relaxed font-sans text-foreground">{output}</pre>
+          <Markdown content={output} />
         </Card>
       )}
     </ModeShell>

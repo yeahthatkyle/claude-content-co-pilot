@@ -152,3 +152,16 @@ export const saveGeneration = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+export const getGenerations = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => z.object({}).parse(input))
+  .handler(async () => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
+      .from("generations")
+      .select("id, mode, stage, persona, product, brief, output, created_at")
+      .order("created_at", { ascending: false })
+      .limit(100);
+    if (error) throw new Error(error.message);
+    return { generations: data ?? [] };
+  });

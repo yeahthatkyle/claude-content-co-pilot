@@ -2,8 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { ModeShell, Button, Card, Label, Field, CopyButton, PillTabs, Spinner } from "@/components/Shell";
-import { saveGeneration } from "@/lib/generate.functions";
-import { generateContent } from "@/services/claude";
+import { runGeneration, saveGeneration } from "@/lib/generate.functions";
 
 export const Route = createFileRoute("/static-social")({
   head: () => ({ meta: [{ title: "Static & Social — Corpay Content Engine" }] }),
@@ -51,6 +50,7 @@ function parseVariations(text: string): Variation[] {
 }
 
 function StaticPage() {
+  const generate = useServerFn(runGeneration);
   const save = useServerFn(saveGeneration);
   const [selectedAssetType, setSelectedAssetType] = useState<(typeof ASSET_TYPES)[number]>("Social Post");
   const [selectedPlatform, setSelectedPlatform] = useState<(typeof PLATFORMS)[number]>("LinkedIn");
@@ -65,14 +65,16 @@ function StaticPage() {
     setError(null);
     setVariations([]);
     try {
-      const res = await generateContent({
-        mode: "static-social",
-        assetType: selectedAssetType,
-        platform: selectedPlatform,
-        persona: selectedPersona,
-        brief: brief,
+      const res = await generate({
+        data: {
+          mode: "static-social",
+          assetType: selectedAssetType,
+          platform: selectedPlatform,
+          persona: selectedPersona,
+          brief,
+        },
       });
-      setVariations(parseVariations(res));
+      setVariations(parseVariations(res.body));
       void save({
         data: {
           mode: "static-social",
@@ -80,7 +82,7 @@ function StaticPage() {
           persona: selectedPersona,
           product: selectedPlatform,
           brief,
-          output: res,
+          output: res.body,
         },
       }).catch(() => {});
     } catch (e) {
@@ -91,7 +93,7 @@ function StaticPage() {
   };
 
   return (
-    <ModeShell title="📐 Static & Social">
+    <ModeShell title="🖼️ Static & Social">
       <Card className="mb-6">
         <div className="space-y-6">
           <div>
@@ -132,7 +134,7 @@ function StaticPage() {
 
       {error && (
         <Card className="border-destructive/50 mb-6">
-          <p className="text-sm text-destructive-foreground">{error}</p>
+          <p className="text-sm text-destructive">{error}</p>
         </Card>
       )}
 
