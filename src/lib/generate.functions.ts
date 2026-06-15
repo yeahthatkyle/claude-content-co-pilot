@@ -106,12 +106,24 @@ Produce TWO outputs separated by a line containing exactly "---LINKEDIN---":
     }
 
     // static-social
+    const isOOH = (data.assetType ?? "").toLowerCase().includes("ooh");
+    const oohRules = isOOH ? `
+OOH COPY LENGTH RULES — enforce these without exception:
+- Highway billboard: 3–7 words MAX. No subhead. No body copy. One idea only.
+- Urban/street-level billboard: 7–10 words. Subhead optional, 5 words max if used.
+- Bus shelter / transit: 10–15 words total across headline + subhead. People are waiting — they'll read, but keep it tight.
+- Wild postings / posters: up to 20–25 words if the design earns it.
+- Airport: 15–20 words. Captive, bored audience — one clear idea, not a brochure.
+- Default (no sub-format specified): treat as highway billboard. 7 words or fewer.
+OOH is a hook, not a brochure. Your job is to make someone think about it AFTER they've passed it — not to finish the thought for them. One idea per execution. If the headline tries to say two things, cut one.
+Body Copy field: leave blank for billboard formats. Use it only for bus shelter / airport / poster where reading time exists.
+` : "";
     user = `# Static & Social — 3 Variations
 Asset type: ${data.assetType ?? "Social Post"}
 Platform: ${data.platform ?? "LinkedIn"}
 Persona: ${data.persona ?? "All Personas"}
 Brief: ${data.brief ?? "(none)"}
-
+${oohRules}
 Produce exactly 3 variations labeled A, B, C. Each variation MUST use this exact format:
 
 ### Variation A

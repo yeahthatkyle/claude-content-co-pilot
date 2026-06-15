@@ -13,6 +13,12 @@ const STAGES = ["Idea", "Script", "Moodboard", "Storyboard", "Execution Round", 
 const PERSONAS = ["All Personas", "Fleet Guy", "T&E Traveler", "Barb (AP Manager)"] as const;
 const PRODUCTS = ["Multi-Card", "AP Automation", "International Payments", "Brand"] as const;
 
+function parseIdeaConcepts(text: string): string[] {
+  const parts = text.split(/(?=#+\s*Concept\s+\d+)/i);
+  const concepts = parts.map((p) => p.trim()).filter(Boolean);
+  return concepts.length > 1 ? concepts : [text];
+}
+
 function CreativePage() {
   const generate = useServerFn(runGeneration);
   const save = useServerFn(saveGeneration);
@@ -24,22 +30,24 @@ function CreativePage() {
   const [output, setOutput] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  const onGenerate = async () => {
+  const runGenerate = async (opts: {
+    stage: (typeof STAGES)[number];
+    brief: string;
+    persona: string;
+    product: string;
+  }) => {
     setIsLoading(true);
     setError(null);
     setOutput("");
+    window.scrollTo({ top: 0, behavior: "smooth" });
     try {
       const res = await generate({
-        data: {
-          mode: "creative",
-          stage: selectedStage,
-          brief,
-          persona: selectedPersona,
-          product: selectedProduct,
-        },
+        data: { mode: "creative", ...opts },
       });
       setOutput(res.body);
-      void save({ data: { mode: "creative", stage: selectedStage, persona: selectedPersona, product: selectedProduct, brief, output: res.body } }).catch(() => {});
+      void save({
+        data: { mode: "creative", stage: opts.stage, persona: opts.persona, product: opts.product, brief: opts.brief, output: res.body },
+      }).catch(() => {});
     } catch (e) {
       setError(e instanceof Error ? e.message : "Generation failed");
     } finally {
@@ -47,13 +55,26 @@ function CreativePage() {
     }
   };
 
+  const onGenerate = () =>
+    runGenerate({ stage: selectedStage, brief, persona: selectedPersona, product: selectedProduct });
+
+  const developConcept = (concept: string) => {
+    const nextStage = "Script" as const;
+    const trimmed = concept.slice(0, 500);
+    setSelectedStage(nextStage);
+    setBrief(trimmed);
+    void runGenerate({ stage: nextStage, brief: trimmed, persona: selectedPersona, product: selectedProduct });
+  };
+
+  const ideaConcepts = selectedStage === "Idea" && output ? parseIdeaConcepts(output) : null;
+
   return (
     <ModeShell title="🎬 Creative">
       <Card className="mb-6">
         <div className="space-y-6">
           <div>
             <Label>Stage</Label>
-            <PillTabs options={STAGES} value={selectedStage} onChange={setSelectedStage} />
+            <PillTabs options={STAGES} value={selectedStage} onChange={(s) => { setSelectedStage(s); setOutput(""); }} />
           </div>
           <div>
             <Label>Brief</Label>
@@ -71,23 +92,19 @@ function CreativePage() {
             <div>
               <Label>Persona</Label>
               <Field as="select" value={selectedPersona} onChange={(e) => setSelectedPersona(e.target.value)}>
-                {PERSONAS.map((p) => (
-                  <option key={p} value={p}>{p}</option>
-                ))}
+                {PERSONAS.map((p) => <option key={p} value={p}>{p}</option>)}
               </Field>
             </div>
             <div>
               <Label>Product</Label>
               <Field as="select" value={selectedProduct} onChange={(e) => setSelectedProduct(e.target.value)}>
-                {PRODUCTS.map((p) => (
-                  <option key={p} value={p}>{p}</option>
-                ))}
+                {PRODUCTS.map((p) => <option key={p} value={p}>{p}</option>)}
               </Field>
             </div>
           </div>
           <div>
             <Button onClick={onGenerate} disabled={isLoading}>
-              {isLoading ? (<span className="inline-flex items-center gap-2"><Spinner />Generating…</span>) : "Generate"}
+              {isLoading ? <span className="inline-flex items-center gap-2"><Spinner />Generating…</span> : "Generate"}
             </Button>
           </div>
         </div>
@@ -99,7 +116,32 @@ function CreativePage() {
         </Card>
       )}
 
-      {output && (
+      {/* Idea stage: parse into selectable concept cards */}
+      {ideaConcepts && ideaConcepts.length > 1 ? (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
+              Pick a concept to develop
+            </p>
+            <CopyButton text={output} />
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {ideaConcepts.map((concept, i) => (
+              <Card key={i} className="flex flex-col justify-between gap-4">
+                <Markdown content={concept} />
+                <Button
+                  variant="outline"
+                  className="w-full mt-2"
+                  onClick={() => developConcept(concept)}
+                  disabled={isLoading}
+                >
+                  {isLoading ? <span className="inline-flex items-center gap-2"><Spinner />Generating…</span> : "Develop into Script →"}
+                </Button>
+              </Card>
+            ))}
+          </div>
+        </div>
+      ) : output ? (
         <Card>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-medium uppercase tracking-wider text-muted-foreground">Output</h2>
@@ -107,7 +149,7 @@ function CreativePage() {
           </div>
           <Markdown content={output} />
         </Card>
-      )}
+      ) : null}
     </ModeShell>
   );
 }
