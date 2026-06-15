@@ -1,7 +1,7 @@
 // src/services/claude.ts
 // Claude API integration for Corpay Content Engine
 
-const CLAUDE_API_URL = "https://api.anthropic.com/v1/messages";
+const CLAUDE_API_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-content`;
 const MODEL = "claude-sonnet-4-6";
 
 const CORPAY_SYSTEM_PROMPT = `You are the Corpay Content Engine — a specialized creative and content tool built for Optimism (the agency) and Corpay's internal marketing team.
@@ -305,6 +305,7 @@ export async function generateContent(options: GenerateOptions): Promise<string>
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      "apikey": import.meta.env.VITE_SUPABASE_ANON_KEY,
     },
     body: JSON.stringify({
       model: MODEL,
