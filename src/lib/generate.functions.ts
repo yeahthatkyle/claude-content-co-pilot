@@ -173,6 +173,13 @@ export const saveGeneration = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+const ASPECT_TO_SIZE: Record<string, string> = {
+  landscape_4_3: "1024x768",
+  landscape_16_9: "1536x864",
+  square_hd: "1024x1024",
+  portrait_4_3: "768x1024",
+};
+
 export const generateImage = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) =>
     z.object({
@@ -181,27 +188,30 @@ export const generateImage = createServerFn({ method: "POST" })
     }).parse(input),
   )
   .handler(async ({ data }) => {
-    const falKey = process.env.FAL_API_KEY;
-    if (!falKey) throw new Error("FAL_API_KEY is not configured");
-    const resp = await fetch("https://fal.run/fal-ai/flux/dev", {
+    const key = process.env.LOVABLE_API_KEY;
+    if (!key) throw new Error("LOVABLE_API_KEY is not configured");
+    const resp = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
       method: "POST",
       headers: {
-        Authorization: `Key ${falKey}`,
+        Authorization: `Bearer ${key}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
+        model: "openai/gpt-image-2",
         prompt: data.prompt,
-        image_size: data.aspectRatio,
-        num_images: 1,
-        num_inference_steps: 28,
+        size: ASPECT_TO_SIZE[data.aspectRatio] ?? "1024x1024",
+        quality: "low",
+        n: 1,
       }),
     });
     if (!resp.ok) {
       const t = await resp.text();
       throw new Error(`Image generation failed (${resp.status}): ${t.slice(0, 300)}`);
     }
-    const json = (await resp.json()) as { images: Array<{ url: string }> };
-    return { imageUrl: json.images?.[0]?.url ?? "" };
+    const json = (await resp.json()) as { data: Array<{ b64_json?: string; url?: string }> };
+    const first = json.data?.[0];
+    const imageUrl = first?.url ?? (first?.b64_json ? `data:image/png;base64,${first.b64_json}` : "");
+    return { imageUrl };
   });
 
 export const getGenerations = createServerFn({ method: "POST" })

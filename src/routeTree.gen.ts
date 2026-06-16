@@ -65,10 +65,21 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/creative' | '/history' | '/static-social' | '/thought-leadership'
+  fullPaths:
+    | '/'
+    | '/creative'
+    | '/history'
+    | '/static-social'
+    | '/thought-leadership'
   fileRoutesByTo: FileRoutesByTo
   to: '/' | '/creative' | '/history' | '/static-social' | '/thought-leadership'
-  id: '__root__' | '/' | '/creative' | '/history' | '/static-social' | '/thought-leadership'
+  id:
+    | '__root__'
+    | '/'
+    | '/creative'
+    | '/history'
+    | '/static-social'
+    | '/thought-leadership'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -129,13 +140,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
